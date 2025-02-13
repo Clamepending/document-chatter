@@ -1,4 +1,8 @@
 import os
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings.base import Embeddings
+import warnings
+warnings.filterwarnings('ignore', message='Examining the path of torch.classes.*')
 
 # load document
 
@@ -31,9 +35,38 @@ def split_documents(documents):
 
 # vectorize
 
-import ollama
-from langchain_ollama import OllamaEmbeddings
+# import ollama
+# from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
+import requests
+import numpy as np
+
+class HuggingFaceEmbeddings(Embeddings):
+    def __init__(self):
+        self.EMBEDDING_TOKEN = os.environ["EMBEDDING_TOKEN"]
+        self.EMBEDDING_API_URL = os.environ["EMBEDDING_API_URL"]
+        self.headers = {"Authorization": f"Bearer {self.EMBEDDING_TOKEN}"}
+
+    def embed_documents(self, texts):
+        """Embed a list of documents"""
+        if isinstance(texts, str):
+            texts = [texts]
+            
+        response = requests.post(self.EMBEDDING_API_URL, headers=self.headers, json={"inputs": texts})
+        
+        if response.status_code != 200:
+            raise ValueError(f"Request failed with status code: {response.status_code}")
+            
+        # Make sure we return a list of embeddings
+        embeddings = response.json()
+        if isinstance(embeddings, dict) and 'error' in embeddings:
+            raise ValueError(f"API Error: {embeddings['error']}")
+        return embeddings
+
+    def embed_query(self, text):
+        """Embed a query"""
+        embeddings = self.embed_documents([text])
+        return embeddings[0]
 
 def create_vector_db(chunks):
     
@@ -42,9 +75,10 @@ def create_vector_db(chunks):
         os.makedirs(persist_directory)
         
         
-    ollama.pull("nomic-embed-text")
+    # ollama.pull("nomic-embed-text")
     
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
+    # embeddings = OllamaEmbeddings(model="nomic-embed-text")
+    embeddings = HuggingFaceEmbeddings()
     
     vector_store = Chroma.from_documents(
         documents=chunks,
@@ -63,7 +97,7 @@ def create_vector_db(chunks):
 
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.prompts import PromptTemplate
-from langchain_ollama import ChatOllama
+# from langchain_ollama import ChatOllama
 
 
 def create_retriever(db, llm):

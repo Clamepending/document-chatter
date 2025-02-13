@@ -33,3 +33,6 @@ sdist/
 var/
 wheels/
 *.egg-info/
+
+# env
+.env

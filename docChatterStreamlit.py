@@ -1,9 +1,15 @@
 import streamlit as st
 from utils import *
+from dotenv import load_dotenv
+load_dotenv()
+api_host = os.getenv('API_HOST')
+api_key = os.getenv('API_KEY')
+Referer = os.getenv('APP_URL')
+Title = os.getenv('APP_TITLE')
 
-MODEL_NAME = "llama3.2:1b" #"deepseek-r1:8b" # 
+# MODEL_NAME = "llama3.2:1b" #"deepseek-r1:8b" # 
 
-ollama.pull(MODEL_NAME)
+# ollama.pull(MODEL_NAME)
 
 def initialize_chat_engine(uploaded_file):
     """Initialize all the components needed for the chat engine"""
@@ -22,7 +28,18 @@ def initialize_chat_engine(uploaded_file):
                 import shutil
                 shutil.rmtree("./chroma_db")
             db = create_vector_db(chunks)
-            llm = ChatOllama(model=MODEL_NAME)
+            # llm = ChatOllama(model=MODEL_NAME)
+
+            llm = ChatOpenAI(model="google/gemini-2.0-flash-lite-preview-02-05:free",
+                            openai_api_key=api_key,
+                            openai_api_base=api_host,
+                            # model_kwargs={
+                            #         "headers": {
+                            #             "HTTP-Referer": Referer,
+                            #             "X-Title": Title,
+                            #         }
+                            #     },
+                            )
             retriever = create_retriever(db, llm)
             chain_and_memory = create_chain(retriever, llm)
             
