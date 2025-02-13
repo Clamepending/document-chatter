@@ -7,6 +7,24 @@ api_key = os.getenv('API_KEY')
 Referer = os.getenv('APP_URL')
 Title = os.getenv('APP_TITLE')
 
+import nltk
+import streamlit as st
+
+# Download required NLTK data
+@st.cache_resource
+def download_nltk_data():
+    try:
+        nltk.download('punkt')
+        nltk.download('averaged_perceptron_tagger')
+        nltk.download('universal_tagset')
+        nltk.download('stopwords')
+        nltk.download('wordnet')
+    except Exception as e:
+        st.error(f"Error downloading NLTK data: {str(e)}")
+
+# Call this at the start of your app
+download_nltk_data()
+
 # MODEL_NAME = "llama3.2:1b" #"deepseek-r1:8b" # 
 
 # ollama.pull(MODEL_NAME)
